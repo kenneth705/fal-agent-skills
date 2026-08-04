@@ -58,9 +58,18 @@ For each input image:
    - portrait: `pad_x = (S - W) // 2` on left and right
    - landscape: `pad_y = (S - H) // 2` on top and bottom
 4. Export two files at `S x S`:
-   - **padded**: original centered on the square canvas (fill new area black
-     or with edge-replicate; it will be repainted anyway).
+   - **padded**: original centered on the square canvas. Fill the new area
+     with **edge-replicate** (stretch the poster's own edge pixels outward),
+     so the seed the model paints over is already color-matched. This alone
+     removes most of the density mismatch that shows up as a seam on lighter
+     posters.
    - **mask**: black where the original sits, WHITE over the padding to fill.
+     Then apply a **moderate gaussian feather (radius ~8-12 px) to the mask
+     boundary only**. This softens the hard black/white edge into a short
+     gradient so the handoff between kept and filled pixels blends instead
+     of showing a crisp line. This is the ONE change from the plain-mask
+     version — keep it moderate; do NOT bite inward into the original and do
+     NOT over-blur (heavy feathering added complexity for little gain).
 5. `save_output` both, keep their URLs.
 
 Reference example files from a real run:
@@ -91,15 +100,15 @@ Fetch the schema, then submit one run per image in ONE
 `submit_batch_model_run` (slug `poster-square-fill`). Per-run input:
 
 - `image_url`: the padded canvas URL from step 1
-- `mask_url`: the mask URL from step 1
+- `mask_url`: the feathered mask URL from step 1
 - `prompt`: the environment-only prompt from step 2
 - `safety_tolerance`: max allowed by schema (licensed IP)
 - `output_format`: `"png"`
 
 Chain to step 4 with `continueAfter`.
 
-Note: Fill returns at reduced resolution (≈1264 px for ~1600 canvases). That
-is expected; step 4 restores full size.
+Note: Fill returns at reduced resolution (approx 1264 px for ~1600 canvases).
+That is expected; step 4 restores full size.
 
 ### Step 4 — Topaz upscale to 3000 (`fal-ai/topaz/upscale/image`)
 
@@ -124,7 +133,14 @@ automatically only if results overshoot; otherwise deliver the Topaz output.
 - Environment-only prompts + a mask that protects the original are what stop
   new characters from appearing. If duplicates ever show up, shorten the
   prompt further (drop everything but sky/ground + "continuous background").
+- The seam fix is just two cheap things: edge-replicate padding + a moderate
+  feathered mask boundary. That is deliberately the WHOLE change from the
+  plain version. Do not add inward biting into the original, heavy blur, or
+  other steps — they add complexity without improving results.
 - Keep placement centered unless the user explicitly asks otherwise.
 - If Flux Fill refuses or degrades on a specific image, fall back to
   `bria/expand` for that one (it never refuses and runs at full res).
+- 402 / payment errors are account credit/billing issues from the provider,
+  NOT a pipeline or masking problem. Nothing in mask geometry can cause a
+  402. If they appear, it is a credits/quota matter to resolve on the account.
 - Do not ask clarifying questions for the standard case. Just run it.
