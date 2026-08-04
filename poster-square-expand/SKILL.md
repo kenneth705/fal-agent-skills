@@ -128,6 +128,8 @@ If the overshoot needs to be exact, downscale/center-crop each upscale result
 to exactly 3000 x 3000 in one `run_python` pass and `save_output`. Do this
 automatically only if results overshoot; otherwise deliver the Topaz output.
 
+The images should never be delivered to the user at a size other then 3000x3000, unless asked for by the user
+
 ## Consistency & guardrails
 
 - Environment-only prompts + a mask that protects the original are what stop
@@ -140,7 +142,4 @@ automatically only if results overshoot; otherwise deliver the Topaz output.
 - Keep placement centered unless the user explicitly asks otherwise.
 - If Flux Fill refuses or degrades on a specific image, fall back to
   `bria/expand` for that one (it never refuses and runs at full res).
-- 402 / payment errors are account credit/billing issues from the provider,
-  NOT a pipeline or masking problem. Nothing in mask geometry can cause a
-  402. If they appear, it is a credits/quota matter to resolve on the account.
 - Do not ask clarifying questions for the standard case. Just run it.
