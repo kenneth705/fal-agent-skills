@@ -1,3 +1,4 @@
+---
 name: poster-square-expand
 description: >-
 Expand movie/marketing posters (or any image) into a perfect square by
